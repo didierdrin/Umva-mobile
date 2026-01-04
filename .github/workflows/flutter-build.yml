@@ -2,83 +2,87 @@ name: Flutter Build
 
 on:
   push:
+    branches: [ main ]  # Only build on main branch
+  pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  FLUTTER_VERSION: '3.38.3'
+
+# Add permissions at workflow level
+permissions:
+  contents: write  # This is crucial for creating releases
+  actions: read
+  checks: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v4
-    - uses: subosito/flutter-action@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
-        flutter-version: '3.19.5'
-    - run: flutter pub get
-    - run: flutter build apk --release
-    - run: flutter build appbundle --release
-    - uses: actions/upload-artifact@v4
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        name: umva-build
-        path: |
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        cache: true
+
+    - name: Verify Flutter installation
+      run: |
+        flutter --version
+        flutter doctor
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Build Android APK
+      run: |
+        flutter build apk --release --no-tree-shake-icons
+      env:
+        FLUTTER_BUILD_MODE: release
+
+    - name: Build Android App Bundle
+      run: |
+        flutter build appbundle --release --no-tree-shake-icons
+      env:
+        FLUTTER_BUILD_MODE: release
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Umva-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
+
+    - name: Upload App Bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: Umva-appbundle
+        path: build/app/outputs/bundle/release/app-release.aab
+        retention-days: 30
+
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'  # Only create releases from main branch
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
           build/app/outputs/flutter-apk/app-release.apk
           build/app/outputs/bundle/release/app-release.aab
-
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        body: |
+          Automatic build triggered by ${{ github.event.head_commit.message }}
           
-# name: Flutter Build and Release
-
-# on:
-#   push:
-#     branches: [ main ]
-#     paths:
-#       - 'umva_v1_0_1/**'
-#   release:
-#     types: [published]
-
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-    
-#     steps:
-#     - name: Checkout Repository
-#       uses: actions/checkout@v4
-
-#     - name: Setup Java
-#       uses: actions/setup-java@v4
-#       with:
-#         distribution: 'temurin'
-#         java-version: '17'
-
-#     - name: Setup Flutter
-#       uses: subosito/flutter-action@v2
-#       with:
-#         flutter-version: '3.19.5'
-#         channel: 'stable'
-
-#     - name: Install Dependencies
-#       run: |
-#         cd umva_v1_0_1
-#         flutter pub get
-
-#     - name: Run Tests
-#       run: |
-#         cd umva_v1_0_1
-#         flutter test
-
-#     - name: Build APK
-#       run: |
-#         cd umva_v1_0_1
-#         flutter build apk --release --build-name=1.0.1 --build-number=${{ github.run_number }}
-
-#     - name: Build App Bundle
-#       run: |
-#         cd umva_v1_0_1
-#         flutter build appbundle --release --build-name=1.0.1 --build-number=${{ github.run_number }}
-
-#     - name: Upload Build Artifacts
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: umva-build-${{ github.run_number }}
-#         path: |
-#           umva_v1_0_1/build/app/outputs/flutter-apk/app-release.apk
-#           umva_v1_0_1/build/app/outputs/bundle/release/app-release.aab
-#         retention-days: 30
+          Build includes:
+          - Android APK
+          - Android App Bundle
+          - Built with --no-tree-shake-icons flag
+        draft: false
+        prerelease: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
