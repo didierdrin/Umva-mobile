@@ -1,0 +1,84 @@
+name: Flutter Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.5'
+    - run: cd umva_v1_0_1 && flutter pub get
+    - run: cd umva_v1_0_1 && flutter build apk --release
+    - run: cd umva_v1_0_1 && flutter build appbundle --release
+    - uses: actions/upload-artifact@v4
+      with:
+        name: umva-build
+        path: |
+          umva_v1_0_1/build/app/outputs/flutter-apk/app-release.apk
+          umva_v1_0_1/build/app/outputs/bundle/release/app-release.aab
+
+          
+# name: Flutter Build and Release
+
+# on:
+#   push:
+#     branches: [ main ]
+#     paths:
+#       - 'umva_v1_0_1/**'
+#   release:
+#     types: [published]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v4
+
+#     - name: Setup Java
+#       uses: actions/setup-java@v4
+#       with:
+#         distribution: 'temurin'
+#         java-version: '17'
+
+#     - name: Setup Flutter
+#       uses: subosito/flutter-action@v2
+#       with:
+#         flutter-version: '3.19.5'
+#         channel: 'stable'
+
+#     - name: Install Dependencies
+#       run: |
+#         cd umva_v1_0_1
+#         flutter pub get
+
+#     - name: Run Tests
+#       run: |
+#         cd umva_v1_0_1
+#         flutter test
+
+#     - name: Build APK
+#       run: |
+#         cd umva_v1_0_1
+#         flutter build apk --release --build-name=1.0.1 --build-number=${{ github.run_number }}
+
+#     - name: Build App Bundle
+#       run: |
+#         cd umva_v1_0_1
+#         flutter build appbundle --release --build-name=1.0.1 --build-number=${{ github.run_number }}
+
+#     - name: Upload Build Artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: umva-build-${{ github.run_number }}
+#         path: |
+#           umva_v1_0_1/build/app/outputs/flutter-apk/app-release.apk
+#           umva_v1_0_1/build/app/outputs/bundle/release/app-release.aab
+#         retention-days: 30
