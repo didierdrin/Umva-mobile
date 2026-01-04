@@ -15,11 +15,11 @@ Future<void> main() async {
   // Initialize Supabase
   SupabaseService();
 
-  // Initialize audio handler
+  // Initialize audio handler - yourcompany
   audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.yourcompany.umva.channel.audio',
+      androidNotificationChannelId: 'com.example.umva.channel.audio',
       androidNotificationChannelName: 'Umva Audio Playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
