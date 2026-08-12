@@ -1,5 +1,6 @@
 // lib/globals.dart
-import 'package:audio_service/audio_service.dart';
-import 'services/audio_handler.dart'; // Add this import
+import 'services/audio_handler.dart';
 
-late AudioPlayerHandler audioHandler; // Use your specific type instead of generic AudioHandler
+/// The single app-wide audio handler. Assigned once in `main()` before
+/// `runApp()`. Everything else (e.g. player_provider) reads it from here.
+late AudioPlayerHandler audioHandler;

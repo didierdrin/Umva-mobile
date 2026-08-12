@@ -25,8 +25,10 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     audioHandler.seek(position);
   }
 
+  @override
   void dispose() {
     audioHandler.stop();
+    super.dispose();
   }
 }
 
