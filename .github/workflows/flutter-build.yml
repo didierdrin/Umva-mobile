@@ -26,6 +26,16 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
+    # Pinned rather than relying on the runner default, which changes over time.
+    # cache: gradle keeps ~/.gradle (including the wrapper distribution) between
+    # runs, so the Gradle download only happens on a cache miss.
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
@@ -39,6 +49,24 @@ jobs:
 
     - name: Get dependencies
       run: flutter pub get
+
+    # Downloading the Gradle distribution is the one genuinely flaky step here -
+    # it has failed with "SocketException: Unexpected end of file from server"
+    # straight out of org.gradle.wrapper.Download. Pulling it into its own
+    # retried step means a dropped connection retries in seconds, while the real
+    # build below still fails fast on an actual compile error.
+    - name: Warm Gradle wrapper
+      working-directory: android
+      run: |
+        for attempt in 1 2 3; do
+          if ./gradlew --version; then
+            exit 0
+          fi
+          echo "::warning::Gradle wrapper download attempt $attempt failed; retrying in 15s"
+          sleep 15
+        done
+        echo "::error::Gradle wrapper could not be downloaded after 3 attempts"
+        exit 1
 
     - name: Build Android APK
       run: |
