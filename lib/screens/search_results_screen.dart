@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/supabase_service.dart';
+import 'package:page_transition/page_transition.dart';
+import '../services/neon_song_service.dart';
 import '../models/music_data.dart';
 import '../providers/recent_searches_provider.dart';
+import '../widgets/song_card.dart';
 import 'now_playing_screen.dart';
 import '../theme/text_styles.dart';
 
@@ -21,8 +23,7 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
   @override
   void initState() {
     super.initState();
-    final service = SupabaseService();
-    _searchFuture = service.searchSongs(widget.query);
+    _searchFuture = NeonSongService().searchSongs(widget.query);
   }
 
   @override
@@ -45,16 +46,12 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
             itemCount: songs.length,
             itemBuilder: (context, index) {
               final data = songs[index];
-              return Card(
-                child: ListTile(
-                  leading: Image.network(data.image, width: 100),
-                  title: Text(data.title, style: bodyStyle(context)),
-                  subtitle: Text(data.channelTitle, style: captionStyle(context)),
-                  onTap: () {
-                    ref.read(recentSearchesProvider.notifier).add(data);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => NowPlayingScreen(song: data)));
-                  },
-                ),
+              return SongCard(
+                song: data,
+                onTap: () {
+                  ref.read(recentSearchesProvider.notifier).add(data);
+                  Navigator.push(context, PageTransition(type: PageTransitionType.bottomToTop, child: NowPlayingScreen(song: data)));
+                },
               );
             },
           );

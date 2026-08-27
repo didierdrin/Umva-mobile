@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,8 +7,7 @@ import '../models/music_data.dart';
 import '../providers/player_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../theme/text_styles.dart';
-import '../services/audio_handler.dart';
-import '../globals.dart'; 
+import '../globals.dart';
 
 class NowPlayingScreen extends ConsumerStatefulWidget {
   final MusicData song;
@@ -46,91 +46,130 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
     final isFavorite = favorites.any((f) => f.url == widget.song.url);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Now Playing', style: headingStyle(context))),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: StreamBuilder<MediaState>(
-          stream: _mediaStateStream,
-          builder: (context, snapshot) {
-            final mediaState = snapshot.data;
-            final duration = mediaState?.mediaItem?.duration ?? Duration.zero;
-            final position = mediaState?.position ?? Duration.zero;
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+        title: Text('Now Playing', style: headingStyle(context).copyWith(color: Colors.white)),
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Blurred, darkened backdrop echoing the album art behind it.
+          Image.network(widget.song.image, fit: BoxFit.cover),
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(color: Colors.black.withOpacity(0.55)),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: StreamBuilder<MediaState>(
+                stream: _mediaStateStream,
+                builder: (context, snapshot) {
+                  final mediaState = snapshot.data;
+                  final duration = mediaState?.mediaItem?.duration ?? Duration.zero;
+                  final position = mediaState?.position ?? Duration.zero;
 
-            return Column(
-              children: [
-                // Album art
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    image: DecorationImage(
-                      image: NetworkImage(widget.song.image),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.song.title,
-                  style: subHeadingStyle(context),
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  widget.song.channelTitle,
-                  style: captionStyle(context),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.fast_rewind),
-                      onPressed: () => playerNotifier.seek(
-                        position - const Duration(seconds: 10),
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Hero(
+                        tag: widget.song.heroTag,
+                        child: Container(
+                          height: 300,
+                          width: 300,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [BoxShadow(blurRadius: 30, color: Colors.black.withOpacity(0.5), offset: const Offset(0, 12))],
+                            image: DecorationImage(image: NetworkImage(widget.song.image), fit: BoxFit.cover),
+                          ),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        playerState.isPlaying ? Icons.pause : Icons.play_arrow,
+                      const SizedBox(height: 28),
+                      Text(
+                        widget.song.title,
+                        style: subHeadingStyle(context).copyWith(color: Colors.white),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      onPressed: playerNotifier.playPause,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.fast_forward),
-                      onPressed: () => playerNotifier.seek(
-                        position + const Duration(seconds: 10),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.song.channelTitle,
+                        style: captionStyle(context).copyWith(color: Colors.white70),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
-                ),
-                Slider(
-                  value: position.inSeconds.toDouble(),
-                  max: duration.inSeconds.toDouble(),
-                  onChanged: (value) =>
-                      playerNotifier.seek(Duration(seconds: value.toInt())),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(_formatDuration(position)),
-                    Text(_formatDuration(duration)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                IconButton(
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: () =>
-                      ref.read(favoritesProvider.notifier).toggle(widget.song),
-                ),
-              ],
-            );
-          },
-        ),
+                      const SizedBox(height: 20),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: Colors.white,
+                          inactiveTrackColor: Colors.white24,
+                          thumbColor: Colors.white,
+                          overlayColor: Colors.white24,
+                        ),
+                        child: Slider(
+                          value: position.inSeconds.clamp(0, duration.inSeconds).toDouble(),
+                          max: duration.inSeconds.toDouble().clamp(1, double.infinity),
+                          onChanged: (value) => playerNotifier.seek(Duration(seconds: value.toInt())),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(_formatDuration(position), style: const TextStyle(color: Colors.white70)),
+                            Text(_formatDuration(duration), style: const TextStyle(color: Colors.white70)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            iconSize: 32,
+                            color: Colors.white,
+                            icon: const Icon(Icons.fast_rewind),
+                            onPressed: () => playerNotifier.seek(position - const Duration(seconds: 10)),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            child: IconButton(
+                              iconSize: 40,
+                              color: Colors.black,
+                              icon: Icon(playerState.isPlaying ? Icons.pause : Icons.play_arrow),
+                              onPressed: playerNotifier.playPause,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            iconSize: 32,
+                            color: Colors.white,
+                            icon: const Icon(Icons.fast_forward),
+                            onPressed: () => playerNotifier.seek(position + const Duration(seconds: 10)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      IconButton(
+                        iconSize: 28,
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Theme.of(context).primaryColor : Colors.white,
+                        ),
+                        onPressed: () => ref.read(favoritesProvider.notifier).toggle(widget.song),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

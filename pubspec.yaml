@@ -22,7 +22,8 @@ dependencies:
   just_audio: ^0.10.5
   audio_service: ^0.18.18
   rxdart: ^0.28.0
-  supabase_flutter: ^2.10.3
+  http: ^1.2.2  # Neon Data API / Neon Auth REST calls
+  flutter_secure_storage: ^9.2.2  # Persists the Neon Auth session cookie
 
 dev_dependencies:
   flutter_test:

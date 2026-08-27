@@ -27,31 +27,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeProvider).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Settings', style: headingStyle(context))),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text('Preferences', style: subHeadingStyle(context)),
-          SwitchListTile(
-            title: Text('Dark Mode', style: bodyStyle(context)),
-            value: isDark,
-            onChanged: (value) => ref.read(themeProvider.notifier).toggleTheme(value),
-          ),
-          const SizedBox(height: 24),
-          Text('Feedback', style: subHeadingStyle(context)),
-          ListTile(
-            leading: const Icon(Icons.bug_report),
-            title: Text('Report a bug', style: bodyStyle(context)),
-            onTap: () => _showDialog(context, 'Report a Bug'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.feedback),
-            title: Text('Send feedback', style: bodyStyle(context)),
-            onTap: () => _showDialog(context, 'Send Feedback'),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      children: [
+        Text('Preferences', style: subHeadingStyle(context)),
+        SwitchListTile(
+          title: Text('Dark Mode', style: bodyStyle(context)),
+          value: isDark,
+          onChanged: (value) => ref.read(themeProvider.notifier).toggleTheme(value),
+        ),
+        const SizedBox(height: 24),
+        Text('Feedback', style: subHeadingStyle(context)),
+        ListTile(
+          leading: const Icon(Icons.bug_report),
+          title: Text('Report a bug', style: bodyStyle(context)),
+          onTap: () => _showDialog(context, 'Report a Bug'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.feedback),
+          title: Text('Send feedback', style: bodyStyle(context)),
+          onTap: () => _showDialog(context, 'Send Feedback'),
+        ),
+      ],
     );
   }
 
