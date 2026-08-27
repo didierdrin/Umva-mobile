@@ -23,7 +23,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _browseFuture = NeonSongService().listSongs();
+    _browseFuture = ref.read(neonSongServiceProvider).listSongs();
   }
 
   @override

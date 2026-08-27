@@ -25,6 +25,11 @@ class NeonAuthService {
   final http.Client _client;
   final FlutterSecureStorage _storage;
 
+  // In-memory only: short-lived (~1h) and cheap to refetch, so there's no
+  // need to persist it like the session cookie.
+  String? _anonymousToken;
+  DateTime? _anonymousTokenExpiry;
+
   NeonAuthService({http.Client? client, FlutterSecureStorage? storage})
       : _client = client ?? http.Client(),
         _storage = storage ?? const FlutterSecureStorage();
@@ -109,12 +114,38 @@ class NeonAuthService {
     }
   }
 
-  /// JWT for the Data API. Null when signed out, callers fall back to
-  /// unauthenticated (anonymous-role) requests.
+  /// JWT for the Data API, scoped to the signed-in user. Null when signed
+  /// out - callers fall back to [getAnonymousToken].
   Future<String?> getToken() async {
     try {
       final data = await _call('/token', method: 'GET');
       return data?['token'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// JWT for the Data API's `anonymous` role - no sign-in required. The
+  /// Data API rejects requests with no Authorization header at all (it does
+  /// not treat "no token" as "anonymous role" the way plain PostgREST
+  /// would), so this is required for public browsing/search. Cached
+  /// in-memory until shortly before it expires.
+  Future<String?> getAnonymousToken() async {
+    final cached = _anonymousToken;
+    final expiry = _anonymousTokenExpiry;
+    if (cached != null && expiry != null && DateTime.now().isBefore(expiry.subtract(const Duration(seconds: 30)))) {
+      return cached;
+    }
+    try {
+      final data = await _call('/token/anonymous', method: 'GET');
+      final token = data?['token'] as String?;
+      if (token == null) return null;
+      final expiresAt = data?['expires_at'];
+      _anonymousToken = token;
+      _anonymousTokenExpiry = expiresAt is int
+          ? DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000, isUtc: true)
+          : DateTime.now().add(const Duration(minutes: 30));
+      return token;
     } catch (_) {
       return null;
     }
