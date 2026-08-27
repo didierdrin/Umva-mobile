@@ -80,18 +80,34 @@ jobs:
       env:
         FLUTTER_BUILD_MODE: release
 
+    # pubspec.yaml's version line is "name+build" (e.g. 1.0.0+1) - the same
+    # string Flutter stamps into the app itself, so the output filename
+    # always matches what's actually installed.
+    - name: Determine app version
+      id: version
+      run: |
+        VERSION=$(sed -n 's/^version: *//p' pubspec.yaml | tr -d '\r')
+        echo "Detected version: $VERSION"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: Rename build outputs
+      run: |
+        mkdir -p build/app/outputs/renamed
+        cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.apk"
+        cp build/app/outputs/bundle/release/app-release.aab "build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.aab"
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Umva-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.apk
         retention-days: 30
 
     - name: Upload App Bundle
       uses: actions/upload-artifact@v4
       with:
         name: Umva-appbundle
-        path: build/app/outputs/bundle/release/app-release.aab
+        path: build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.aab
         retention-days: 30
 
     - name: Create Release
@@ -99,8 +115,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          build/app/outputs/flutter-apk/app-release.apk
-          build/app/outputs/bundle/release/app-release.aab
+          build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.apk
+          build/app/outputs/renamed/Umva-${{ steps.version.outputs.version }}.aab
         tag_name: v1.0.${{ github.run_number }}
         name: Release v1.0.${{ github.run_number }}
         body: |
