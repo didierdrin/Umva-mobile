@@ -11,9 +11,6 @@ class NeonConfig {
   static const String authUrl =
       'https://ep-mute-math-b21g7jq4.neonauth.c-6.eu-central-1.aws.neon.tech/neondb/auth';
 
-  // TODO: confirm against Neon console -> project -> Data API tab and
-  // replace this placeholder. listSongs()/searchSongs() will fail loudly
-  // (see NeonSongService) until this points at the real endpoint.
   static const String dataApiUrl =
-      'https://ep-mute-math-b21g7jq4.apirest.c-6.eu-central-1.aws.neon.tech/neondb';
+      'https://ep-mute-math-b21g7jq4.apirest.c-6.eu-central-1.aws.neon.tech/neondb/rest/v1';
 }

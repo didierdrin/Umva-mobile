@@ -96,24 +96,31 @@ class _OverallScreenState extends ConsumerState<OverallScreen> {
           Positioned(
             left: 24,
             right: 24,
-            bottom: 16,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.showMiniPlayer && currentSong != null) ...[
-                  _buildMiniPlayer(playerState, currentSong),
-                  const SizedBox(height: 12),
-                ],
-                FloatingPillNav(
-                  currentIndex: _selectedIndex,
-                  onTap: (index) => ref.read(selectedTabProvider.notifier).state = index,
-                  items: const [
-                    PillNavItem(icon: Icons.library_music, label: 'Library'),
-                    PillNavItem(icon: Icons.search, label: 'Search'),
-                    PillNavItem(icon: Icons.settings, label: 'Settings'),
+            bottom: 0,
+            // minimum keeps a 16px gap above the system gesture bar / home
+            // indicator instead of the pill sitting flush against (or under)
+            // it on devices with a large bottom inset.
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.showMiniPlayer && currentSong != null) ...[
+                    _buildMiniPlayer(playerState, currentSong),
+                    const SizedBox(height: 12),
                   ],
-                ),
-              ],
+                  FloatingPillNav(
+                    currentIndex: _selectedIndex,
+                    onTap: (index) => ref.read(selectedTabProvider.notifier).state = index,
+                    items: const [
+                      PillNavItem(icon: Icons.library_music, label: 'Library'),
+                      PillNavItem(icon: Icons.search, label: 'Search'),
+                      PillNavItem(icon: Icons.settings, label: 'Settings'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
